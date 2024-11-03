@@ -8,8 +8,8 @@ from sklearn.cluster import KMeans
 
 
 # Rutas de los modelos y el escalador
-model_path = '/content/drive/My Drive/kmeans_model_bank.pkl'  # Ruta del modelo
-scaler_path = '/content/drive/My Drive/scaler_bank.pkl'        # Ruta del escalador
+model_path = 'kmeans_model_bank.pkl'  # Ruta del modelo
+scaler_path = 'scaler_bank.pkl'        # Ruta del escalador
 
 # Cargar el modelo, el escalador
 try:
