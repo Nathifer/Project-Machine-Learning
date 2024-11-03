@@ -53,7 +53,7 @@ numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
 
 # Aplicar One-Hot Encoding a las columnas categóricas
 try:
-    encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
+    encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
     encoded_categorical_data = encoder.fit_transform(input_data[categorical_columns])
     encoded_categorical_df = pd.DataFrame(encoded_categorical_data, columns=encoder.get_feature_names_out(categorical_columns))
 
