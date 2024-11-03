@@ -1,23 +1,24 @@
 import streamlit as st
 import joblib
-import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 # Rutas de los modelos y el escalador
 model_path = 'kmeans_model_bank.pkl'  # Ruta del modelo
 scaler_path = 'scaler_bank.pkl'        # Ruta del escalador
-encoder_path = 'encoder_bank.pkl'      # Ruta del codificador, si lo tienes guardado
+encoder_path = 'encoder_bank.pkl'      # Ruta del codificador
 
-# Cargar el modelo y el escalador
+# Cargar el modelo, el escalador y el codificador
 try:
     model = joblib.load(model_path)
     scaler = joblib.load(scaler_path)
-    encoder = joblib.load(encoder_path)  # Cargar el codificador, si tienes uno
+    encoder = joblib.load(encoder_path)  # Cargar el codificador
 except FileNotFoundError as e:
     st.error(f"Error: {e}")
+    st.stop()  # Detener la ejecución si hay un error al cargar modelos
 except Exception as e:
     st.error(f"Error al cargar los modelos: {e}")
+    st.stop()
 
 # Interfaz de usuario
 st.title("Predicción de Clientes del Banco")
@@ -38,7 +39,6 @@ pdays = st.number_input('Pdays', min_value=-1, step=1)
 campaign = st.number_input('Campaign', min_value=1, step=1)
 
 # Preparar los datos para la predicción
-# Crear DataFrame con las columnas categóricas y numéricas
 input_data = pd.DataFrame({
     'job': [job], 'marital': [marital], 'education': [education],
     'default': [default], 'housing': [housing], 'loan': [loan],
@@ -53,10 +53,6 @@ numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
 
 # Aplicar One-Hot Encoding a las columnas categóricas
 try:
-    if 'encoder' not in locals():
-        encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
-        encoder.fit(input_data[categorical_columns])  # Ajustar el encoder a los datos de entrada
-
     encoded_categorical_data = encoder.transform(input_data[categorical_columns])
     encoded_categorical_df = pd.DataFrame(encoded_categorical_data, columns=encoder.get_feature_names_out(categorical_columns))
 
@@ -67,6 +63,7 @@ try:
     input_data_final[numerical_columns] = scaler.transform(input_data_final[numerical_columns])
 except Exception as e:
     st.error(f"Error al procesar los datos: {e}")
+    st.stop()  # Detener la ejecución si hay un error en el procesamiento
 
 # Realizar predicción
 if st.button('Realizar Predicción'):
