@@ -1,7 +1,6 @@
 import streamlit as st
 import joblib
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 # Rutas de los modelos y el escalador
 model_path = 'kmeans_model_bank.pkl'  # Ruta del modelo
@@ -53,6 +52,7 @@ numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
 
 # Aplicar One-Hot Encoding a las columnas categóricas
 try:
+    # Transformar las columnas categóricas usando el encoder
     encoded_categorical_data = encoder.transform(input_data[categorical_columns])
     encoded_categorical_df = pd.DataFrame(encoded_categorical_data, columns=encoder.get_feature_names_out(categorical_columns))
 
