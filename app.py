@@ -1,6 +1,7 @@
 import streamlit as st
 import joblib
 import pandas as pd
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 # Rutas de los modelos y el escalador
 model_path = 'kmeans_model_bank.pkl'  # Ruta del modelo
@@ -31,7 +32,7 @@ housing = st.selectbox('Housing Loan?', ['yes', 'no'])
 loan = st.selectbox('Personal Loan?', ['yes', 'no'])
 contact = st.selectbox('Contact Communication Type', ['cellular', 'telephone'])
 poutcome = st.selectbox('Previous Outcome', ['failure', 'nonexistent', 'success'])
-month = st.selectbox('Month', ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'])  # Agregado
+month = st.selectbox('Month', ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'])
 age = st.number_input('Age', min_value=18, max_value=100, step=1)
 balance = st.number_input('Balance', min_value=0, step=100)
 duration = st.number_input('Duration', min_value=0, step=10)
@@ -48,7 +49,7 @@ input_data = pd.DataFrame({
     'loan': [loan],
     'contact': [contact], 
     'poutcome': [poutcome],
-    'month': [month],  # Asegúrate de incluir 'month'
+    'month': [month],  
     'age': [age], 
     'balance': [balance], 
     'duration': [duration],
@@ -56,24 +57,23 @@ input_data = pd.DataFrame({
     'campaign': [campaign]
 })
 
-# Separar columnas categóricas y numéricas
-categorical_columns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'poutcome', 'month']
-numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
+# Aplicar Label Encoding a las columnas binarias
+binary_columns = ['default', 'housing', 'loan']
+
+for column in binary_columns:
+    input_data[column] = label_encoder.transform(input_data[column])  # Usa el mismo encoder
 
 # Aplicar One-Hot Encoding a las columnas categóricas
-try:
-    # Transformar las columnas categóricas usando el encoder
-    encoded_categorical_data = encoder.transform(input_data[categorical_columns])
-    encoded_categorical_df = pd.DataFrame(encoded_categorical_data, columns=encoder.get_feature_names_out(categorical_columns))
+categorical_columns = ['job', 'marital', 'education', 'contact', 'poutcome', 'month']
+encoded_categorical_data = encoder.transform(input_data[categorical_columns])
+encoded_categorical_df = pd.DataFrame(encoded_categorical_data, columns=encoder.get_feature_names_out(categorical_columns))
 
-    # Combinar con las columnas numéricas
-    input_data_final = pd.concat([encoded_categorical_df, input_data[numerical_columns]], axis=1)
+# Concatenar con las columnas numéricas
+numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
+input_data_final = pd.concat([encoded_categorical_df.reset_index(drop=True), input_data[numerical_columns]], axis=1)
 
-    # Escalar las columnas numéricas
-    input_data_final[numerical_columns] = scaler.transform(input_data_final[numerical_columns])
-except Exception as e:
-    st.error(f"Error al procesar los datos: {e}")
-    st.stop()  # Detener la ejecución si hay un error en el procesamiento
+# Escalar las columnas numéricas
+input_data_final[numerical_columns] = scaler.transform(input_data_final[numerical_columns])
 
 # Realizar predicción
 if st.button('Realizar Predicción'):
