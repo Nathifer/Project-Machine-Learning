@@ -1,20 +1,19 @@
 
+
 import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.cluster import KMeans
-
-
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 # Rutas de los modelos y el escalador
-model_path = 'kmeans_model_bank.pkl'  # Ruta del modelo
-scaler_path = 'scaler_bank.pkl'        # Ruta del escalador
+model_path = '/content/drive/My Drive/kmeans_model_bank.pkl'  # Ruta del modelo
+scaler_path = '/content/drive/My Drive/scaler_bank.pkl'        # Ruta del escalador
 
-# Cargar el modelo, el escalador
+# Cargar el modelo y el escalador
 try:
     model = joblib.load(model_path)
-
+    scaler = joblib.load(scaler_path)
 except FileNotFoundError as e:
     st.error(f"Error: {e}")
 except Exception as e:
@@ -32,11 +31,11 @@ housing = st.selectbox('Housing Loan?', ['yes', 'no'])
 loan = st.selectbox('Personal Loan?', ['yes', 'no'])
 contact = st.selectbox('Contact Communication Type', ['cellular', 'telephone'])
 poutcome = st.selectbox('Previous Outcome', ['failure', 'nonexistent', 'success'])
-age = st.number_input('Age', min_value=18, max_value=100, value=30)
-balance = st.number_input('Balance', value=0)
-duration = st.number_input('Duration', value=0)
-pdays = st.number_input('Pdays', value=0)
-campaign = st.number_input('Campaign', value=1)
+age = st.number_input('Age', min_value=18, max_value=100, step=1)
+balance = st.number_input('Balance', min_value=0, step=100)
+duration = st.number_input('Duration', min_value=0, step=10)
+pdays = st.number_input('Pdays', min_value=-1, step=1)
+campaign = st.number_input('Campaign', min_value=1, step=1)
 
 # Preparar los datos para la predicción
 # Crear DataFrame con las columnas categóricas y numéricas
@@ -48,19 +47,23 @@ input_data = pd.DataFrame({
     'pdays': [pdays], 'campaign': [campaign]
 })
 
-# Seleccionar columnas categóricas y numéricas
-categorical_columns = ["poutcome", "marital", "education", "contact", "job"]
+# Separar columnas categóricas y numéricas
+categorical_columns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'poutcome']
 numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
 
-# Escalar las columnas numéricas
+# Aplicar One-Hot Encoding a las columnas categóricas
 try:
-    input_data[numerical_columns] = scaler.transform(input_data[numerical_columns])
+    encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
+    encoded_categorical_data = encoder.fit_transform(input_data[categorical_columns])
+    encoded_categorical_df = pd.DataFrame(encoded_categorical_data, columns=encoder.get_feature_names_out(categorical_columns))
+
+    # Combinar con las columnas numéricas
+    input_data_final = pd.concat([encoded_categorical_df, input_data[numerical_columns]], axis=1)
+
+    # Escalar las columnas numéricas
+    input_data_final[numerical_columns] = scaler.transform(input_data_final[numerical_columns])
 except Exception as e:
-    st.error(f"Error al escalar los datos numéricos: {e}")
-
-
-# Combinar datos numéricos y codificados
-input_data_final = input_data[numerical_columns]
+    st.error(f"Error al procesar los datos: {e}")
 
 # Realizar predicción
 if st.button('Realizar Predicción'):
@@ -72,3 +75,4 @@ if st.button('Realizar Predicción'):
             st.warning('El cliente probablemente no suscriba el préstamo.')
     except Exception as e:
         st.error(f"Error en la predicción: {e}")
+        
