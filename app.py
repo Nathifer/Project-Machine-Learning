@@ -1,7 +1,7 @@
 import streamlit as st
 import joblib
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
 
 # Rutas de los modelos y el escalador
 model_path = 'kmeans_model_bank.pkl'  # Ruta del modelo
@@ -19,6 +19,9 @@ except FileNotFoundError as e:
 except Exception as e:
     st.error(f"Error al cargar los modelos: {e}")
     st.stop()
+
+# Crear un LabelEncoder para las columnas binarias
+label_encoder = LabelEncoder()
 
 # Interfaz de usuario
 st.title("Predicción de Clientes del Banco")
@@ -61,7 +64,11 @@ input_data = pd.DataFrame({
 binary_columns = ['default', 'housing', 'loan']
 
 for column in binary_columns:
-    input_data[column] = label_encoder.transform(input_data[column])  # Usa el mismo encoder
+    # Asegúrate de que las columnas se codifiquen correctamente
+    try:
+        input_data[column] = label_encoder.fit_transform(input_data[column])  # Ajustar el encoder y transformar
+    except ValueError as e:
+        st.error(f"Error al codificar la columna {column}: {e}")
 
 # Aplicar One-Hot Encoding a las columnas categóricas
 categorical_columns = ['job', 'marital', 'education', 'contact', 'poutcome', 'month']
