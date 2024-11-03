@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import joblib
 import numpy as np
@@ -9,11 +7,13 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 # Rutas de los modelos y el escalador
 model_path = 'kmeans_model_bank.pkl'  # Ruta del modelo
 scaler_path = 'scaler_bank.pkl'        # Ruta del escalador
+encoder_path = 'encoder_bank.pkl'      # Ruta del codificador, si lo tienes guardado
 
 # Cargar el modelo y el escalador
 try:
     model = joblib.load(model_path)
     scaler = joblib.load(scaler_path)
+    encoder = joblib.load(encoder_path)  # Cargar el codificador, si tienes uno
 except FileNotFoundError as e:
     st.error(f"Error: {e}")
 except Exception as e:
@@ -53,8 +53,11 @@ numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
 
 # Aplicar One-Hot Encoding a las columnas categóricas
 try:
-    encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
-    encoded_categorical_data = encoder.fit_transform(input_data[categorical_columns])
+    if 'encoder' not in locals():
+        encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
+        encoder.fit(input_data[categorical_columns])  # Ajustar el encoder a los datos de entrada
+
+    encoded_categorical_data = encoder.transform(input_data[categorical_columns])
     encoded_categorical_df = pd.DataFrame(encoded_categorical_data, columns=encoder.get_feature_names_out(categorical_columns))
 
     # Combinar con las columnas numéricas
@@ -75,4 +78,3 @@ if st.button('Realizar Predicción'):
             st.warning('El cliente probablemente no suscriba el préstamo.')
     except Exception as e:
         st.error(f"Error en la predicción: {e}")
-        
