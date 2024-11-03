@@ -31,6 +31,7 @@ housing = st.selectbox('Housing Loan?', ['yes', 'no'])
 loan = st.selectbox('Personal Loan?', ['yes', 'no'])
 contact = st.selectbox('Contact Communication Type', ['cellular', 'telephone'])
 poutcome = st.selectbox('Previous Outcome', ['failure', 'nonexistent', 'success'])
+month = st.selectbox('Month', ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'])  # Agregado
 age = st.number_input('Age', min_value=18, max_value=100, step=1)
 balance = st.number_input('Balance', min_value=0, step=100)
 duration = st.number_input('Duration', min_value=0, step=10)
@@ -39,15 +40,24 @@ campaign = st.number_input('Campaign', min_value=1, step=1)
 
 # Preparar los datos para la predicción
 input_data = pd.DataFrame({
-    'job': [job], 'marital': [marital], 'education': [education],
-    'default': [default], 'housing': [housing], 'loan': [loan],
-    'contact': [contact], 'poutcome': [poutcome],
-    'age': [age], 'balance': [balance], 'duration': [duration],
-    'pdays': [pdays], 'campaign': [campaign]
+    'job': [job], 
+    'marital': [marital], 
+    'education': [education],
+    'default': [default], 
+    'housing': [housing], 
+    'loan': [loan],
+    'contact': [contact], 
+    'poutcome': [poutcome],
+    'month': [month],  # Asegúrate de incluir 'month'
+    'age': [age], 
+    'balance': [balance], 
+    'duration': [duration],
+    'pdays': [pdays], 
+    'campaign': [campaign]
 })
 
 # Separar columnas categóricas y numéricas
-categorical_columns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'poutcome']
+categorical_columns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'poutcome', 'month']
 numerical_columns = ['age', 'balance', 'duration', 'pdays', 'campaign']
 
 # Aplicar One-Hot Encoding a las columnas categóricas
