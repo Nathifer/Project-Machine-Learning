@@ -21,7 +21,7 @@ def load_data():
     url = "https://raw.githubusercontent.com/Nathifer/Project-Machine-Learning/main/Kmeans_Bank/bank_dataset.csv"
     data = pd.read_csv(url)
     return data
-
+    
 # Función para predecir el clúster basándonos en las entradas
 def predict_cluster(kmeans_model, scaler, inputs):
     # Escalar los datos de entrada
@@ -29,7 +29,7 @@ def predict_cluster(kmeans_model, scaler, inputs):
     # Realizar la predicción
     cluster = kmeans_model.predict(scaled_input)
     return cluster[0]
-
+    
 # Función para mostrar el gráfico de los clústeres
 def show_cluster_plot(kmeans_model, scaler, data):
     # Predecir los clústeres
@@ -51,9 +51,19 @@ def show_cluster_plot(kmeans_model, scaler, data):
     # Mostrar gráfico en Streamlit
     st.pyplot(fig)
 
+# Función para mostrar los primeros datos
+def show_data(bank):
+    st.write("### Datos del Banco")
+    st.write(bank.head())
+
+# Función para mostrar estadísticas descriptivas
+def show_statistics(bank):
+    st.write("### Estadísticas Descriptivas")
+    st.write(bank.describe())
+
 # Función principal para la interfaz de Streamlit
 def main():
-    st.title('Análisis de Datos del Banco')
+    st.title('Predicción de Clústeres - Análisis de Datos del Banco')
 
     # Cargar los modelos y el escalador
     kmeans_model, scaler = load_model()
@@ -96,3 +106,25 @@ def main():
     for i, col in enumerate(input_data.keys()):
         if col in ['job', 'marital', 'education', 'housing', 'loan', 'contact', 'poutcome']:
             input_values[0, i] = bank_encoded[col].astype('category').cat.categories.get_loc(input_data[col])
+
+    # Predecir el clúster
+    predicted_cluster = predict_cluster(kmeans_model, scaler, input_values[0])
+    st.sidebar.write(f"**Clúster Predicho:** {predicted_cluster}")
+
+    # Mostrar el gráfico
+    show_cluster_plot(kmeans_model, scaler, bank_encoded)
+
+    # Crear una barra lateral para navegación
+    option = st.sidebar.selectbox(
+        'Selecciona una opción:',
+        ['Ver Datos', 'Estadísticas Descriptivas']
+    )
+
+    # Mostrar los datos seleccionados
+    if option == 'Ver Datos':
+        show_data(bank)
+    elif option == 'Estadísticas Descriptivas':
+        show_statistics(bank)
+
+if __name__ == '__main__':
+    main()
