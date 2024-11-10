@@ -3,7 +3,7 @@ import streamlit as st
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 
 # Cargar el modelo KMeans y el escalador desde archivos pickle
@@ -39,7 +39,6 @@ def predict_cluster(kmeans_model, scaler, inputs):
     return predicted_cluster
 
 
-    
 # Función para mostrar el gráfico de los clústeres
 def show_cluster_plot(kmeans_model, scaler, data):
     # Predecir los clústeres
@@ -86,7 +85,7 @@ def main():
     job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
     marital = st.sidebar.selectbox("Estado Civil", bank['marital'].unique())
     education = st.sidebar.selectbox("Educación", bank['education'].unique())
-    housing = st.sidebar.selectbox("housing", bank['month'].unique())
+    month = st.sidebar.selectbox("Mes de Contacto", bank['month'].unique())  # Definir `month`
     contact = st.sidebar.selectbox("Tipo de Contacto", bank['contact'].unique())
     poutcome = st.sidebar.selectbox("Resultado de Campaña Anterior", bank['poutcome'].unique())
 
@@ -95,16 +94,17 @@ def main():
         'job': job,
         'marital': marital,
         'education': education,
+        'month': month,
         'contact': contact,
-        'poutcome': poutcome,
-        'month' : month
-    } 
+        'poutcome': poutcome
+    }
 
-    # Aquí es necesario transformar las variables categóricas antes de hacer la predicción
+    # Transformar las variables categóricas antes de hacer la predicción
     bank_encoded = bank.copy()
+    categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
 
     # Asegurarse de que las columnas categóricas sean del tipo 'category'
-    for column in ['job', 'marital', 'education', 'month', 'contact', 'poutcome']:
+    for column in categorical_columns:
         bank_encoded[column] = bank_encoded[column].astype('category')
 
         # Verificar si el valor ingresado está en las categorías disponibles
@@ -112,16 +112,14 @@ def main():
             st.sidebar.error(f"El valor '{input_data[column]}' para {column} no es válido.")
             return
 
-    # Transformar las entradas
-    input_values = np.array([list(input_data.values())])
-    for i, col in enumerate(input_data.keys()):
-        if col in ['job', 'marital', 'education', 'month', 'contact', 'poutcome']:
-            # Asegurarse de que las columnas sean del tipo 'category' y luego acceder a las categorías
-            input_values[0, i] = bank_encoded[col].cat.categories.get_loc(input_data[col])
+    # Codificar las entradas usando la posición de las categorías
+    input_values = []
+    for col in categorical_columns:
+        input_values.append(bank_encoded[col].cat.categories.get_loc(input_data[col]))
 
     # Predecir el clúster
-    predicted_cluster = predict_cluster(kmeans_model, scaler, input_values[0])
-    st.sidebar.write(f"**Clúster Predicho:** {predicted_cluster}")
+    predicted_cluster = predict_cluster(kmeans_model, scaler, input_values)
+    st.sidebar.write(f"**Clúster Predicho:** {predicted_cluster[0]}")
 
     # Mostrar el gráfico
     show_cluster_plot(kmeans_model, scaler, bank_encoded)
