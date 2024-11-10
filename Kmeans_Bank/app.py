@@ -86,6 +86,11 @@ def main():
     # Cargar los datos
     bank = load_data()
 
+    # Verificar si la columna 'pdays' existe en el conjunto de datos
+    if 'pdays' not in bank.columns:
+        st.write("¡Atención! La columna 'pdays' no está presente en el dataset.")
+        return
+
     # Crear formulario para ingresar parámetros
     st.sidebar.header("Ingresa los parámetros de las variables")
     job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
