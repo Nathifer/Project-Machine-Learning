@@ -1,13 +1,15 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
 import pickle
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from imblearn.over_sampling import RandomOverSampler
 
+# Título de la aplicación
+st.title("Análisis de Datos de Clientes Bancarios con KMeans")
 
-# Cargar el modelo KMeans y el escalador desde archivos pickle
-@st.cache_resource
+# Cargar el modelo y el escalador
+@st.cache
 def load_model():
     with open('kmeans_model_bank.pkl', 'rb') as model_file:
         kmeans_model = pickle.load(model_file)
@@ -15,140 +17,117 @@ def load_model():
         scaler = pickle.load(scaler_file)
     return kmeans_model, scaler
 
-# Función para cargar el dataset desde GitHub
-@st.cache_data
+# Cargar el modelo y el escalador
+kmeans_model, scaler = load_model()
+
+# Cargar el dataset desde GitHub
+@st.cache
 def load_data():
     url = "https://raw.githubusercontent.com/Nathifer/Project-Machine-Learning/main/Kmeans_Bank/bank_dataset.csv"
-    data = pd.read_csv(url)
-    return data
-    
-# Función para predecir el clúster basándonos en las entradas
-def predict_cluster(kmeans_model, scaler, input_values, bank_encoded, numeric_columns):
-    # Crear un DataFrame con las mismas columnas que el modelo espera
-    input_data = dict(zip(bank_encoded.columns, input_values))
-    input_df = pd.DataFrame([input_data])
+    return pd.read_csv(url)
 
-    # Asegúrate de que las columnas numéricas sean del tipo adecuado
-    for col in numeric_columns:
-        input_df[col] = input_df[col].astype(float)
+# Cargar los datos
+bank = load_data()
 
-    # Asegúrate de que las columnas categóricas estén codificadas
-    categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
-    for col in categorical_columns:
-        input_df[col] = input_df[col].astype('category')
+# Mostrar una vista previa del DataFrame
+st.subheader("Vista previa de los datos")
+st.write(bank.head())
 
-    # Escalar las entradas
-    scaled_input = scaler.transform(input_df)
+# Descripción básica
+st.subheader("Estadísticas Descriptivas")
+st.write(bank.describe())
 
-    # Hacer la predicción con el modelo KMeans
-    predicted_cluster = kmeans_model.predict(scaled_input)
-    
-    return predicted_cluster
+# Eliminar outliers
+def remove_outliers(df, column, factor=3):
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - factor * IQR
+    upper_bound = Q3 + factor * IQR
+    return df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
 
-# Función para mostrar el gráfico de los clústeres
-def show_cluster_plot(kmeans_model, scaler, data):
-    # Predecir los clústeres
-    data_scaled = scaler.transform(data)
-    clusters = kmeans_model.predict(data_scaled)
-    data['Cluster'] = clusters
+# Aplicar la eliminación de outliers en varias columnas
+outlier_columns = ['age', 'balance', 'duration', 'pdays', 'previous']
+for col in outlier_columns:
+    bank = remove_outliers(bank, col)
 
-    # Graficar los resultados (2D)
-    fig, ax = plt.subplots()
-    scatter = ax.scatter(data.iloc[:, 0], data.iloc[:, 1], c=data['Cluster'], cmap='viridis')
-    ax.set_xlabel(data.columns[0])
-    ax.set_ylabel(data.columns[1])
-    ax.set_title("Visualización de Clústeres")
+# Imputar valores nulos (ya lo has hecho en tu código)
+# Asegúrate de que no haya valores nulos
+bank = bank.fillna(method='ffill')  # O puedes hacer la imputación que hayas utilizado en el código
 
-    # Añadir leyenda
-    legend1 = ax.legend(*scatter.legend_elements(), title="Clusters")
-    ax.add_artist(legend1)
+# Mostrar datos sin valores nulos
+st.subheader("Datos sin valores nulos")
+st.write(bank.isnull().sum())
 
-    # Mostrar gráfico en Streamlit
-    st.pyplot(fig)
+# Oversampling para balancear las clases
+X = bank.drop(columns=['deposit'])
+y = bank['deposit']
 
-# Función para mostrar los primeros datos
-def show_data(bank):
-    st.write("### Datos del Banco")
-    st.write(bank.head())
+ros = RandomOverSampler(random_state=42)
+X_resampled, y_resampled = ros.fit_resample(X, y)
 
-# Función para mostrar estadísticas descriptivas
-def show_statistics(bank):
-    st.write("### Estadísticas Descriptivas")
-    st.write(bank.describe())
+# Verificar el balance de las clases después del oversampling
+num_depositos_resampled = y_resampled.value_counts()['yes']
+num_no_depositos_resampled = y_resampled.value_counts()['no']
 
-# Función principal para la interfaz de Streamlit
-def main():
-    st.title('Predicción de Clústeres - Análisis de Datos del Banco')
+st.subheader("Balance de clases después de oversampling")
+st.write(f"Depósitos: {num_depositos_resampled}")
+st.write(f"No Depósitos: {num_no_depositos_resampled}")
 
-    # Cargar los modelos y el escalador
-    kmeans_model, scaler = load_model()
+# Dividir los datos en conjunto de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.2, random_state=42, stratify=y_resampled)
 
-    # Cargar los datos
-    bank = load_data()
+st.subheader("Tamaño de los conjuntos de entrenamiento y prueba")
+st.write(f"Tamaño del conjunto de entrenamiento (X): {X_train.shape}")
+st.write(f"Tamaño del conjunto de prueba (X): {X_test.shape}")
+st.write(f"Tamaño del conjunto de entrenamiento (y): {y_train.shape}")
+st.write(f"Tamaño del conjunto de prueba (y): {y_test.shape}")
 
-    # Verificar si la columna 'pdays' existe en el conjunto de datos
-    if 'pdays' not in bank.columns:
-        st.write("¡Atención! La columna 'pdays' no está presente en el dataset.")
-        return
+# Codificación de variables categóricas (Label Encoding)
+binary_columns = ['default', 'housing', 'loan']
 
-    # Crear formulario para ingresar parámetros
-    st.sidebar.header("Ingresa los parámetros de las variables")
-    job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
-    marital = st.sidebar.selectbox("Estado Civil", bank['marital'].unique())
-    education = st.sidebar.selectbox("Educación", bank['education'].unique())
-    month = st.sidebar.selectbox("Mes de Contacto", bank['month'].unique())  
-    contact = st.sidebar.selectbox("Tipo de Contacto", bank['contact'].unique())
-    poutcome = st.sidebar.selectbox("Resultado de Campaña Anterior", bank['poutcome'].unique())
+label_encoder = LabelEncoder()
+for column in binary_columns:
+    X_train[column] = label_encoder.fit_transform(X_train[column])
+    X_test[column] = label_encoder.transform(X_test[column])
 
-    # Codificar las variables categóricas
-    input_data = {
-        'job': job,
-        'marital': marital,
-        'education': education,
-        'month': month,
-        'contact': contact,
-        'poutcome': poutcome
-    }
+st.subheader("Ejemplo de datos después de Label Encoding")
+st.write(X_train.head())
 
-    # Codificar las entradas utilizando el encoder
-    bank_encoded = bank.copy()
-    categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
+# Codificación OneHotEncoding
+encoder = OneHotEncoder(sparse_output=False)
+columns_to_encode = ["poutcome", "marital", "education", "contact", "month", "job"]
 
-    # Asegurarse de que las columnas categóricas sean del tipo 'category'
-    for column in categorical_columns:
-        bank_encoded[column] = bank_encoded[column].astype('category')
+one_hot_encoded_array_train = encoder.fit_transform(X_train[columns_to_encode])
+one_hot_encoded_array_test = encoder.transform(X_test[columns_to_encode])
 
-    # Codificar las entradas usando la posición de las categorías
-    input_values = []
-    for col in categorical_columns:
-        input_values.append(bank_encoded[col].cat.categories.get_loc(input_data[col]))
+one_hot_encoded_df_train = pd.DataFrame(one_hot_encoded_array_train, columns=encoder.get_feature_names_out(columns_to_encode))
+one_hot_encoded_df_test = pd.DataFrame(one_hot_encoded_array_test, columns=encoder.get_feature_names_out(columns_to_encode))
 
-    # Obtener las variables numéricas
-    numeric_columns = [col for col in bank.columns if col not in categorical_columns and bank[col].dtype != 'object']
-    numeric_values = [float(st.sidebar.text_input(f"Ingrese valor para {col}", 0)) for col in numeric_columns]
+X_train = pd.concat([X_train.reset_index(drop=True), one_hot_encoded_df_train.reset_index(drop=True)], axis=1).drop(columns_to_encode, axis=1)
+X_test = pd.concat([X_test.reset_index(drop=True), one_hot_encoded_df_test.reset_index(drop=True)], axis=1).drop(columns_to_encode, axis=1)
 
-    # Concatenar las características numéricas y categóricas
-    all_input_values = input_values + numeric_values
+st.subheader("Datos después de OneHotEncoding")
+st.write(X_train.head())
 
-    # Predecir el clúster
-    predicted_cluster = predict_cluster(kmeans_model, scaler, all_input_values, bank_encoded, numeric_columns)  
-    st.sidebar.write(f"**Clúster Predicho:** {predicted_cluster[0]}")
+# Realizar la predicción utilizando el modelo KMeans
+st.subheader("Predicción de Clústeres con KMeans")
+input_data = X_test.iloc[0:5]  # Ejemplo con las primeras 5 filas del conjunto de prueba
 
-    # Mostrar el gráfico
-    show_cluster_plot(kmeans_model, scaler, bank_encoded)
+# Escalar los datos de entrada
+input_data_scaled = scaler.transform(input_data)
 
-    # Crear una barra lateral para navegación
-    option = st.sidebar.selectbox(
-        'Selecciona una opción:',
-        ['Ver Datos', 'Estadísticas Descriptivas']
-    )
+# Predecir los clústeres
+cluster_predictions = kmeans_model.predict(input_data_scaled)
 
-    # Mostrar los datos seleccionados
-    if option == 'Ver Datos':
-        show_data(bank)
-    elif option == 'Estadísticas Descriptivas':
-        show_statistics(bank)
+st.write("Clústeres predichos para las primeras 5 filas del conjunto de prueba:")
+st.write(cluster_predictions)
 
-# Ejecutar la aplicación
-if __name__ == "__main__":
-    main()
+# Gráfica de predicciones
+st.subheader("Visualización de Clústeres")
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.scatter(X_test['age'], X_test['balance'], c=cluster_predictions, cmap='viridis', s=50, alpha=0.5)
+ax.set_xlabel('Edad')
+ax.set_ylabel('Balance')
+ax.set_title('Clústeres Predichos')
+st.pyplot(fig)
