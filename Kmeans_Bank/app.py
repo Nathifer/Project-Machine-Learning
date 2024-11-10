@@ -23,20 +23,39 @@ def load_data():
     return data
     
 # Función para predecir el clúster basándonos en las entradas
-def predict_cluster(kmeans_model, scaler, inputs):
-    # Verifica la forma de inputs para asegurarte de que tiene el mismo número de características que los datos con los que se entrenó el scaler
-    expected_features = scaler.transform([inputs]).shape[1]
+def predict_cluster(kmeans_model, scaler, inputs, bank):
+    # Verifica que las entradas tengan el mismo número de características que las del conjunto de entrenamiento
+    # Incluye tanto las variables categóricas como las numéricas
+    categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
+    numeric_columns = [col for col in bank.columns if col not in categorical_columns and bank[col].dtype != 'object']
+
+    # Asegurarse de que las columnas categóricas sean codificadas
+    input_values = []
     
-    if len(inputs) != expected_features:
-        raise ValueError(f"El número de características en 'inputs' debe ser {expected_features}. Se recibió {len(inputs)} características.")
+    # Codificar las entradas para las variables categóricas
+    bank_encoded = bank.copy()
+    for column in categorical_columns:
+        bank_encoded[column] = bank_encoded[column].astype('category')
+        # Verificar si el valor ingresado está en las categorías disponibles
+        if input_data[column] not in bank_encoded[column].cat.categories:
+            st.sidebar.error(f"El valor '{input_data[column]}' para {column} no es válido.")
+            return
+        input_values.append(bank_encoded[column].cat.categories.get_loc(input_data[column]))
+
+    # Obtener las variables numéricas si existen
+    numeric_values = [float(st.sidebar.text_input(f"Ingrese valor para {col}", 0)) for col in numeric_columns]
+
+    # Concatenar las características numéricas y categóricas
+    all_input_values = input_values + numeric_values
+
+    # Asegúrate de que todas las características están en el mismo orden que en el conjunto de datos original
+    scaled_input = scaler.transform([all_input_values])
     
-    # Si las características coinciden, transformamos los datos de entrada
-    scaled_input = scaler.transform(np.array([inputs]))
-    
-    # Hacemos la predicción con el modelo KMeans
+    # Hacer la predicción con el modelo KMeans
     predicted_cluster = kmeans_model.predict(scaled_input)
     
     return predicted_cluster
+
 
 
 # Función para mostrar el gráfico de los clústeres
