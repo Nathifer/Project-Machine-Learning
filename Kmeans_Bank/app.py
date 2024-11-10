@@ -23,40 +23,14 @@ def load_data():
     return data
     
 # Función para predecir el clúster basándonos en las entradas
-def predict_cluster(kmeans_model, scaler, inputs, bank):
-    # Verifica que las entradas tengan el mismo número de características que las del conjunto de entrenamiento
-    # Incluye tanto las variables categóricas como las numéricas
-    categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
-    numeric_columns = [col for col in bank.columns if col not in categorical_columns and bank[col].dtype != 'object']
-
-    # Asegurarse de que las columnas categóricas sean codificadas
-    input_values = []
-    
-    # Codificar las entradas para las variables categóricas
-    bank_encoded = bank.copy()
-    for column in categorical_columns:
-        bank_encoded[column] = bank_encoded[column].astype('category')
-        # Verificar si el valor ingresado está en las categorías disponibles
-        if input_data[column] not in bank_encoded[column].cat.categories:
-            st.sidebar.error(f"El valor '{input_data[column]}' para {column} no es válido.")
-            return
-        input_values.append(bank_encoded[column].cat.categories.get_loc(input_data[column]))
-
-    # Obtener las variables numéricas si existen
-    numeric_values = [float(st.sidebar.text_input(f"Ingrese valor para {col}", 0)) for col in numeric_columns]
-
-    # Concatenar las características numéricas y categóricas
-    all_input_values = input_values + numeric_values
-
-    # Asegúrate de que todas las características están en el mismo orden que en el conjunto de datos original
-    scaled_input = scaler.transform([all_input_values])
+def predict_cluster(kmeans_model, scaler, input_values, bank_encoded):
+    # Escalar las entradas
+    scaled_input = scaler.transform([input_values])
     
     # Hacer la predicción con el modelo KMeans
     predicted_cluster = kmeans_model.predict(scaled_input)
     
     return predicted_cluster
-
-
 
 # Función para mostrar el gráfico de los clústeres
 def show_cluster_plot(kmeans_model, scaler, data):
@@ -104,7 +78,7 @@ def main():
     job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
     marital = st.sidebar.selectbox("Estado Civil", bank['marital'].unique())
     education = st.sidebar.selectbox("Educación", bank['education'].unique())
-    month = st.sidebar.selectbox("Mes de Contacto", bank['month'].unique())  # Definir `month`
+    month = st.sidebar.selectbox("Mes de Contacto", bank['month'].unique())  
     contact = st.sidebar.selectbox("Tipo de Contacto", bank['contact'].unique())
     poutcome = st.sidebar.selectbox("Resultado de Campaña Anterior", bank['poutcome'].unique())
 
@@ -118,7 +92,7 @@ def main():
         'poutcome': poutcome
     }
 
-    # Transformar las variables categóricas antes de hacer la predicción
+    # Codificar las entradas utilizando el encoder
     bank_encoded = bank.copy()
     categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
 
@@ -126,18 +100,20 @@ def main():
     for column in categorical_columns:
         bank_encoded[column] = bank_encoded[column].astype('category')
 
-        # Verificar si el valor ingresado está en las categorías disponibles
-        if input_data[column] not in bank_encoded[column].cat.categories:
-            st.sidebar.error(f"El valor '{input_data[column]}' para {column} no es válido.")
-            return
-
     # Codificar las entradas usando la posición de las categorías
     input_values = []
     for col in categorical_columns:
         input_values.append(bank_encoded[col].cat.categories.get_loc(input_data[col]))
 
+    # Obtener las variables numéricas
+    numeric_columns = [col for col in bank.columns if col not in categorical_columns and bank[col].dtype != 'object']
+    numeric_values = [float(st.sidebar.text_input(f"Ingrese valor para {col}", 0)) for col in numeric_columns]
+
+    # Concatenar las características numéricas y categóricas
+    all_input_values = input_values + numeric_values
+
     # Predecir el clúster
-    predicted_cluster = predict_cluster(kmeans_model, scaler, input_values, bank)  # Pasa el DataFrame 'bank'
+    predicted_cluster = predict_cluster(kmeans_model, scaler, all_input_values, bank_encoded)  
     st.sidebar.write(f"**Clúster Predicho:** {predicted_cluster[0]}")
 
     # Mostrar el gráfico
