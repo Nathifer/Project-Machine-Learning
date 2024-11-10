@@ -83,13 +83,10 @@ def main():
 
     # Crear formulario para ingresar parámetros
     st.sidebar.header("Ingresa los parámetros de las variables")
-    age = st.sidebar.number_input("Edad", min_value=18, max_value=100, value=30)
     job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
     marital = st.sidebar.selectbox("Estado Civil", bank['marital'].unique())
     education = st.sidebar.selectbox("Educación", bank['education'].unique())
-    balance = st.sidebar.number_input("Balance")
-    housing = st.sidebar.selectbox("Vivienda", bank['housing'].unique())
-    loan = st.sidebar.selectbox("Préstamo", bank['loan'].unique())
+    month = st.sidebar.selectbox("month", bank['month'].unique())
     contact = st.sidebar.selectbox("Tipo de Contacto", bank['contact'].unique())
     poutcome = st.sidebar.selectbox("Resultado de Campaña Anterior", bank['poutcome'].unique())
 
