@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 
 # Cargar el modelo KMeans y el escalador desde archivos pickle
-@st.cache_data
+@st.cache_resource
 def load_model():
     with open('kmeans_model_bank.pkl', 'rb') as model_file:
         kmeans_model = pickle.load(model_file)
@@ -85,7 +85,7 @@ def main():
     job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
     marital = st.sidebar.selectbox("Estado Civil", bank['marital'].unique())
     education = st.sidebar.selectbox("Educación", bank['education'].unique())
-    month = st.sidebar.selectbox("Mes de Contacto", bank['month'].unique())  # Definir `month`
+    month = st.sidebar.selectbox("Mes de Contacto", bank['month'].unique())
     contact = st.sidebar.selectbox("Tipo de Contacto", bank['contact'].unique())
     poutcome = st.sidebar.selectbox("Resultado de Campaña Anterior", bank['poutcome'].unique())
 
@@ -99,11 +99,12 @@ def main():
         'poutcome': poutcome
     }
 
-    # Transformar las variables categóricas antes de hacer la predicción
-    bank_encoded = bank.copy()
+    # Codificar las entradas usando LabelEncoder o cat.codes
+    input_values = []
     categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
 
     # Asegurarse de que las columnas categóricas sean del tipo 'category'
+    bank_encoded = bank.copy()
     for column in categorical_columns:
         bank_encoded[column] = bank_encoded[column].astype('category')
 
@@ -112,10 +113,8 @@ def main():
             st.sidebar.error(f"El valor '{input_data[column]}' para {column} no es válido.")
             return
 
-    # Codificar las entradas usando la posición de las categorías
-    input_values = []
-    for col in categorical_columns:
-        input_values.append(bank_encoded[col].cat.categories.get_loc(input_data[col]))
+        # Codificar el valor ingresado
+        input_values.append(bank_encoded[column].cat.categories.get_loc(input_data[column]))
 
     # Predecir el clúster
     predicted_cluster = predict_cluster(kmeans_model, scaler, input_values)
