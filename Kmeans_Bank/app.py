@@ -104,7 +104,7 @@ def main():
     bank_encoded = bank.copy()
 
     # Asegurarse de que las columnas categóricas sean del tipo 'category'
-    for column in ['job', 'marital', 'education', 'loan', 'contact', 'poutcome']:
+    for column in ['job', 'marital', 'education', 'month', 'contact', 'poutcome']:
         bank_encoded[column] = bank_encoded[column].astype('category')
 
         # Verificar si el valor ingresado está en las categorías disponibles
@@ -115,7 +115,7 @@ def main():
     # Transformar las entradas
     input_values = np.array([list(input_data.values())])
     for i, col in enumerate(input_data.keys()):
-        if col in ['job', 'marital', 'education', 'loan', 'contact', 'poutcome']:
+        if col in ['job', 'marital', 'education', 'month', 'contact', 'poutcome']:
             # Asegurarse de que las columnas sean del tipo 'category' y luego acceder a las categorías
             input_values[0, i] = bank_encoded[col].cat.categories.get_loc(input_data[col])
 
