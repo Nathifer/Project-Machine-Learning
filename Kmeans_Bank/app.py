@@ -24,11 +24,12 @@ def load_data():
     
 # Función para predecir el clúster basándonos en las entradas
 def predict_cluster(kmeans_model, scaler, inputs):
-    # Escalar los datos de entrada
-    scaled_input = scaler.transform([inputs])
-    # Realizar la predicción
-    cluster = kmeans_model.predict(scaled_input)
-    return cluster[0]
+    # Asegúrate de que inputs tenga la forma correcta (1, n_features)
+    scaled_input = scaler.transform(np.array([inputs]))  # Cambié esta línea para asegurar la forma correcta    
+    # Hacer la predicción con el modelo KMeans
+    predicted_cluster = kmeans_model.predict(scaled_input)
+    
+    return predicted_cluster
     
 # Función para mostrar el gráfico de los clústeres
 def show_cluster_plot(kmeans_model, scaler, data):
