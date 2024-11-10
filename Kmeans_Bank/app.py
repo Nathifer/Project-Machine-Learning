@@ -95,16 +95,13 @@ def main():
 
     # Codificar las variables categóricas
     input_data = {
-        'age': age,
         'job': job,
         'marital': marital,
         'education': education,
-        'balance': balance,
-        'housing': housing,
-        'loan': loan,
         'contact': contact,
-        'poutcome': poutcome
-    }
+        'poutcome': poutcome,
+        'month' : month
+    } 
 
     # Aquí es necesario transformar las variables categóricas antes de hacer la predicción
     bank_encoded = bank.copy()
