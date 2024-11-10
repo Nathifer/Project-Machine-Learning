@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-
 # Cargar el modelo KMeans y el escalador desde archivos pickle
 @st.cache_resource
 def load_model():
@@ -21,9 +20,9 @@ def load_data():
     url = "https://raw.githubusercontent.com/Nathifer/Project-Machine-Learning/main/Kmeans_Bank/bank_dataset.csv"
     data = pd.read_csv(url)
     return data
-    
+
 # Función para predecir el clúster basándonos en las entradas
-def predict_cluster(kmeans_model, scaler, input_values, bank_encoded):
+def predict_cluster(kmeans_model, scaler, input_values):
     # Escalar las entradas
     scaled_input = scaler.transform([input_values])
     
@@ -113,7 +112,7 @@ def main():
     all_input_values = input_values + numeric_values
 
     # Predecir el clúster
-    predicted_cluster = predict_cluster(kmeans_model, scaler, all_input_values, bank_encoded)  
+    predicted_cluster = predict_cluster(kmeans_model, scaler, all_input_values)  
     st.sidebar.write(f"**Clúster Predicho:** {predicted_cluster[0]}")
 
     # Mostrar el gráfico
@@ -130,3 +129,6 @@ def main():
         show_data(bank)
     elif option == 'Estadísticas Descriptivas':
         show_statistics(bank)
+
+if __name__ == '__main__':
+    main()
