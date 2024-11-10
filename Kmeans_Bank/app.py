@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
+
 # Cargar el modelo KMeans y el escalador desde archivos pickle
 @st.cache_resource
 def load_model():
@@ -20,12 +21,25 @@ def load_data():
     url = "https://raw.githubusercontent.com/Nathifer/Project-Machine-Learning/main/Kmeans_Bank/bank_dataset.csv"
     data = pd.read_csv(url)
     return data
-
-# Función para predecir el clúster basándonos en las entradas
-def predict_cluster(kmeans_model, scaler, input_values):
-    # Escalar las entradas
-    scaled_input = scaler.transform([input_values])
     
+# Función para predecir el clúster basándonos en las entradas
+def predict_cluster(kmeans_model, scaler, input_values, bank_encoded, numeric_columns):
+    # Crear un DataFrame con las mismas columnas que el modelo espera
+    input_data = dict(zip(bank_encoded.columns, input_values))
+    input_df = pd.DataFrame([input_data])
+
+    # Asegúrate de que las columnas numéricas sean del tipo adecuado
+    for col in numeric_columns:
+        input_df[col] = input_df[col].astype(float)
+
+    # Asegúrate de que las columnas categóricas estén codificadas
+    categorical_columns = ['job', 'marital', 'education', 'month', 'contact', 'poutcome']
+    for col in categorical_columns:
+        input_df[col] = input_df[col].astype('category')
+
+    # Escalar las entradas
+    scaled_input = scaler.transform(input_df)
+
     # Hacer la predicción con el modelo KMeans
     predicted_cluster = kmeans_model.predict(scaled_input)
     
@@ -112,7 +126,7 @@ def main():
     all_input_values = input_values + numeric_values
 
     # Predecir el clúster
-    predicted_cluster = predict_cluster(kmeans_model, scaler, all_input_values)  
+    predicted_cluster = predict_cluster(kmeans_model, scaler, all_input_values, bank_encoded, numeric_columns)  
     st.sidebar.write(f"**Clúster Predicho:** {predicted_cluster[0]}")
 
     # Mostrar el gráfico
@@ -130,5 +144,6 @@ def main():
     elif option == 'Estadísticas Descriptivas':
         show_statistics(bank)
 
-if __name__ == '__main__':
+# Ejecutar la aplicación
+if __name__ == "__main__":
     main()
