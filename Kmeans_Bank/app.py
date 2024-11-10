@@ -31,7 +31,7 @@ def predict_cluster(kmeans_model, scaler, inputs):
     return cluster[0]
     
 # Función para mostrar el gráfico de los clústeres
-def show_cluster_plot(kmeans_model, data):
+def show_cluster_plot(kmeans_model, scaler, data):
     # Predecir los clústeres
     data_scaled = scaler.transform(data)
     clusters = kmeans_model.predict(data_scaled)
