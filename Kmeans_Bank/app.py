@@ -98,8 +98,16 @@ def main():
 
     # Aquí es necesario transformar las variables categóricas antes de hacer la predicción
     bank_encoded = bank.copy()
+
+    # Asegurarse de que los valores ingresados estén en las categorías disponibles
     for column in ['job', 'marital', 'education', 'housing', 'loan', 'contact', 'poutcome']:
-        bank_encoded[column] = bank_encoded[column].astype('category').cat.codes
+        bank_encoded[column] = bank_encoded[column].astype('category')
+        bank_encoded[column] = bank_encoded[column].cat.codes
+
+        # Verificar si el valor ingresado está en las categorías disponibles
+        if input_data[column] not in bank_encoded[column].cat.categories:
+            st.sidebar.error(f"El valor '{input_data[column]}' para {column} no es válido.")
+            return
 
     # Transformar las entradas
     input_values = np.array([list(input_data.values())])
