@@ -77,7 +77,7 @@ def main():
     job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
     marital = st.sidebar.selectbox("Estado Civil", bank['marital'].unique())
     education = st.sidebar.selectbox("Educación", bank['education'].unique())
-    balance = st.sidebar.number_input("Balance", value=0)
+    balance = st.sidebar.number_input("Balance")
     housing = st.sidebar.selectbox("Vivienda", bank['housing'].unique())
     loan = st.sidebar.selectbox("Préstamo", bank['loan'].unique())
     contact = st.sidebar.selectbox("Tipo de Contacto", bank['contact'].unique())
@@ -99,10 +99,9 @@ def main():
     # Aquí es necesario transformar las variables categóricas antes de hacer la predicción
     bank_encoded = bank.copy()
 
-    # Asegurarse de que los valores ingresados estén en las categorías disponibles
+    # Asegurarse de que las columnas categóricas sean del tipo 'category'
     for column in ['job', 'marital', 'education', 'housing', 'loan', 'contact', 'poutcome']:
         bank_encoded[column] = bank_encoded[column].astype('category')
-        bank_encoded[column] = bank_encoded[column].cat.codes
 
         # Verificar si el valor ingresado está en las categorías disponibles
         if input_data[column] not in bank_encoded[column].cat.categories:
@@ -113,7 +112,8 @@ def main():
     input_values = np.array([list(input_data.values())])
     for i, col in enumerate(input_data.keys()):
         if col in ['job', 'marital', 'education', 'housing', 'loan', 'contact', 'poutcome']:
-            input_values[0, i] = bank_encoded[col].astype('category').cat.categories.get_loc(input_data[col])
+            # Asegurarse de que las columnas sean del tipo 'category' y luego acceder a las categorías
+            input_values[0, i] = bank_encoded[col].cat.categories.get_loc(input_data[col])
 
     # Predecir el clúster
     predicted_cluster = predict_cluster(kmeans_model, scaler, input_values[0])
