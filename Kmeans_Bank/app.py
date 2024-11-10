@@ -86,7 +86,7 @@ def main():
     job = st.sidebar.selectbox("Trabajo", bank['job'].unique())
     marital = st.sidebar.selectbox("Estado Civil", bank['marital'].unique())
     education = st.sidebar.selectbox("Educación", bank['education'].unique())
-    month = st.sidebar.selectbox("month", bank['month'].unique())
+    housing = st.sidebar.selectbox("housing", bank['month'].unique())
     contact = st.sidebar.selectbox("Tipo de Contacto", bank['contact'].unique())
     poutcome = st.sidebar.selectbox("Resultado de Campaña Anterior", bank['poutcome'].unique())
 
@@ -104,7 +104,7 @@ def main():
     bank_encoded = bank.copy()
 
     # Asegurarse de que las columnas categóricas sean del tipo 'category'
-    for column in ['job', 'marital', 'education', 'housing', 'loan', 'contact', 'poutcome']:
+    for column in ['job', 'marital', 'education', 'loan', 'contact', 'poutcome']:
         bank_encoded[column] = bank_encoded[column].astype('category')
 
         # Verificar si el valor ingresado está en las categorías disponibles
@@ -115,7 +115,7 @@ def main():
     # Transformar las entradas
     input_values = np.array([list(input_data.values())])
     for i, col in enumerate(input_data.keys()):
-        if col in ['job', 'marital', 'education', 'housing', 'loan', 'contact', 'poutcome']:
+        if col in ['job', 'marital', 'education', 'loan', 'contact', 'poutcome']:
             # Asegurarse de que las columnas sean del tipo 'category' y luego acceder a las categorías
             input_values[0, i] = bank_encoded[col].cat.categories.get_loc(input_data[col])
 
